@@ -32,7 +32,7 @@ HTML_TEMPLATE = """
         <h3>Tu pregunta:</h3>
         <p>{{ pregunta }}</p>
         <h3>Respuesta:</h3>
-        <p>{{ respuesta }}</p>
+        <p>{{ respuesta|safe }}</p>
         <p><em>{{ disclaimer }}</em></p>
     {% endif %}
 </body>
