@@ -1,61 +1,69 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, request, render_template_string
 import pandas as pd
+import os
+from difflib import get_close_matches
 
-# Cargar Excel con las preguntas y respuestas
-faq_df = pd.read_excel("faq_tributarias.xlsx")
+# === Configuración de Flask ===
+app = Flask(__name__)
 
-# Plantilla HTML básica
+# === Cargar Excel con ruta absoluta ===
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+EXCEL_FILE = os.path.join(BASE_DIR, "faq_tributarias.xlsx")
+df = pd.read_excel(EXCEL_FILE)
+
+# === Interfaz simple ===
 HTML_TEMPLATE = """
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>VASEbot</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 50px; }
-        h1 { color: #2C3E50; }
-        .chat-box { width: 100%; max-width: 600px; }
-        .question, .answer { padding: 10px; margin: 10px 0; border-radius: 5px; }
-        .question { background-color: #D6EAF8; text-align: right; }
-        .answer { background-color: #E8F8F5; text-align: left; }
-        .disclaimer { font-size: 12px; color: #7D3C98; margin-top: 20px; }
-    </style>
+    <meta charset="UTF-8">
+    <title>VASEbot - Asistente Tributario</title>
 </head>
-<body>
-    <h1>🤖 VASEbot - Tu asistente tributario</h1>
+<body style="font-family: Arial, sans-serif; margin: 40px;">
+    <h1>VASEbot 🤖</h1>
+    <p>Tu asistente tributario en línea</p>
     <form method="post">
-        <input type="text" name="pregunta" placeholder="Haz tu consulta aquí..." style="width:400px; padding:5px;" required>
-        <button type="submit">Consultar</button>
+        <label for="pregunta">Haz tu consulta:</label><br><br>
+        <input type="text" id="pregunta" name="pregunta" style="width: 400px;" required>
+        <button type="submit">Preguntar</button>
     </form>
 
     {% if pregunta %}
-        <div class="chat-box">
-            <div class="question"><b>Tú:</b> {{ pregunta }}</div>
-            <div class="answer"><b>VASEbot:</b> {{ respuesta }}</div>
-        </div>
+        <h3>Tu pregunta:</h3>
+        <p>{{ pregunta }}</p>
+        <h3>Respuesta:</h3>
+        <p>{{ respuesta }}</p>
+        <p><em>{{ disclaimer }}</em></p>
     {% endif %}
-
-    <div class="disclaimer">⚠ Verifique siempre la normativa vigente.</div>
 </body>
 </html>
 """
 
-# Crear la app Flask
-app = Flask(__name__)
-
+# === Buscar mejor coincidencia ===
 def buscar_respuesta(pregunta):
-    for _, row in faq_df.iterrows():
-        if str(row["Pregunta"]).lower() in pregunta.lower():
-            return row["Respuesta"]
-    return "Lo siento, no encontré una coincidencia clara."
+    preguntas = df["Pregunta"].tolist()
+    coincidencias = get_close_matches(pregunta, preguntas, n=1, cutoff=0.5)
+    if coincidencias:
+        fila = df[df["Pregunta"] == coincidencias[0]].iloc[0]
+        return fila["Respuesta"], fila["Fuente"], fila["Disclaimer"]
+    else:
+        return "Lo siento, no encontré una coincidencia clara.", "", ""
 
+# === Ruta principal ===
 @app.route("/", methods=["GET", "POST"])
-def index():
-    respuesta = ""
+def home():
+    respuesta, fuente, disclaimer = "", "", ""
     pregunta = ""
+
     if request.method == "POST":
         pregunta = request.form["pregunta"]
-        respuesta = buscar_respuesta(pregunta)
-    return render_template_string(HTML_TEMPLATE, pregunta=pregunta, respuesta=respuesta)
+        respuesta, fuente, disclaimer = buscar_respuesta(pregunta)
 
-# ⚠️ Importante: Render necesita que la app quede expuesta así
-app = app
+        if fuente:
+            respuesta += f"<br><br><strong>Fuente:</strong> {fuente}"
+
+    return render_template_string(HTML_TEMPLATE, pregunta=pregunta, respuesta=respuesta, disclaimer=disclaimer)
+
+# === Ejecutar en Render ===
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
