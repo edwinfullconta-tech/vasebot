@@ -21,7 +21,7 @@ HTML_TEMPLATE = """
 </head>
 <body style="font-family: Arial, sans-serif; margin: 40px; background-color:#f0f2f5;">
     <div style="max-width:700px; margin:auto; padding:20px; background-color:white; border-radius:10px; box-shadow:0px 0px 10px rgba(0,0,0,0.1);">
-        <h1 style="text-align:center; color:#2c3e50;">VASEbot 🤖</h1>
+        <h1 style="text-align:center; color:#2c3e50;">VASEbot 🤝</h1>
         <p style="text-align:center; color:#34495e;">Tu asistente tributario en línea</p>
 
         <form method="post" style="text-align:center; margin-top:20px;">
