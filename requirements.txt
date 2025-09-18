@@ -1,0 +1,4 @@
+flask
+pandas
+chromadb
+sentence-transformers
