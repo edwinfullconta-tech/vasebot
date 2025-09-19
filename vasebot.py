@@ -3,72 +3,114 @@ import pandas as pd
 import os
 from difflib import get_close_matches
 
-# === Configuración de Flask ===
 app = Flask(__name__)
-app.secret_key = "vasebot_secret_key"  # Cambia por algo más seguro en producción
+app.secret_key = "vasebot_secret_key"
 
-# === Usuario único de prueba ===
 USUARIO_PRUEBA = "piloto"
 CLAVE_PRUEBA = "VASE1234"
 
-# === Cargar Excel con ruta absoluta ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 EXCEL_FILE = os.path.join(BASE_DIR, "faq_tributarias.xlsx")
 df = pd.read_excel(EXCEL_FILE)
 
-# === Interfaz del chat con bienvenida y logout ===
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>VASEbot – Asistente Tributario</title>
-</head>
-<body style="font-family: Arial, sans-serif; margin: 40px;">
+# === Plantilla base con estilos ===
+BASE_STYLE = """
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    .container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        max-width: 600px;
+        width: 100%;
+        text-align: center;
+    }
+    h1, h2 {
+        color: #2c3e50;
+    }
+    input[type=text], input[type=password] {
+        width: 80%;
+        padding: 10px;
+        margin: 8px 0;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+    }
+    button {
+        background-color: #3498db;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #2980b9;
+    }
+    .logout {
+        background-color: #e74c3c;
+        margin-top: 15px;
+    }
+    .logout:hover {
+        background-color: #c0392b;
+    }
+    .respuesta {
+        background-color: #ecf0f1;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: left;
+        margin-top: 15px;
+    }
+</style>
+"""
+
+# === Interfaz del chat ===
+HTML_TEMPLATE = BASE_STYLE + """
+<div class="container">
     <h1>VASEbot 🤝</h1>
     <p>Hola <strong>{{ usuario }}</strong>, tu asistente tributario en línea.</p>
     <form method="post">
-        <label for="pregunta">Haz tu consulta:</label><br><br>
-        <input type="text" id="pregunta" name="pregunta" style="width: 400px;" required>
+        <input type="text" id="pregunta" name="pregunta" placeholder="Escribe tu consulta aquí..." required>
+        <br><br>
         <button type="submit">Preguntar</button>
     </form>
-    <form method="get" action="{{ url_for('logout') }}" style="margin-top:20px;">
-        <button type="submit" style="background-color:#e74c3c; color:white; padding:8px 16px; border:none; border-radius:4px;">Cerrar sesión</button>
+    <form method="get" action="{{ url_for('logout') }}">
+        <button type="submit" class="logout">Cerrar sesión</button>
     </form>
 
     {% if pregunta %}
-        <h3>Tu pregunta:</h3>
-        <p>{{ pregunta }}</p>
-        <h3>Respuesta:</h3>
-        <p>{{ respuesta|safe }}</p>
-        <p><em>{{ disclaimer }}</em></p>
+        <div class="respuesta">
+            <h3>Tu pregunta:</h3>
+            <p><em>{{ pregunta }}</em></p>
+            <h3>Respuesta:</h3>
+            <p>{{ respuesta|safe }}</p>
+            <p><small><em>{{ disclaimer }}</em></small></p>
+        </div>
     {% endif %}
-</body>
-</html>
+</div>
 """
 
 # === Interfaz de login ===
-LOGIN_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Login VASEbot</title>
-</head>
-<body style="font-family: Arial, sans-serif; margin: 40px;">
+LOGIN_TEMPLATE = BASE_STYLE + """
+<div class="container">
     <h2>Login VASEbot</h2>
     {% if error %}
         <p style="color:red;">{{ error }}</p>
     {% endif %}
     <form method="post">
-        <label>Usuario:</label><br>
-        <input type="text" name="username" required><br><br>
-        <label>Contraseña:</label><br>
-        <input type="password" name="password" required><br><br>
+        <input type="text" name="username" placeholder="Usuario" required><br>
+        <input type="password" name="password" placeholder="Contraseña" required><br>
         <button type="submit">Ingresar</button>
     </form>
-</body>
-</html>
+</div>
 """
 
 # === Función para buscar respuesta ===
@@ -81,7 +123,7 @@ def buscar_respuesta(pregunta):
     else:
         return "Lo siento, no encontré una coincidencia clara.", "Verifique siempre la normativa vigente."
 
-# === Ruta de login ===
+# === Rutas ===
 @app.route("/", methods=["GET", "POST"])
 def login():
     if "username" in session:
@@ -98,7 +140,6 @@ def login():
             error = "Usuario o contraseña incorrectos."
     return render_template_string(LOGIN_TEMPLATE, error=error)
 
-# === Ruta principal del chat ===
 @app.route("/home", methods=["GET", "POST"])
 def home():
     if "username" not in session:
@@ -114,12 +155,10 @@ def home():
 
     return render_template_string(HTML_TEMPLATE, pregunta=pregunta, respuesta=respuesta, disclaimer=disclaimer, usuario=usuario)
 
-# === Ruta de logout ===
 @app.route("/logout")
 def logout():
     session.pop("username", None)
     return redirect(url_for("login"))
 
-# === Ejecutar en Render ===
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
