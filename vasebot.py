@@ -31,14 +31,16 @@ HTML_TEMPLATE = """
     {% if not pregunta %}
         <div style="margin: 20px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; text-align: left;">
             <h3>Bienvenido</h3>
-            <p>Consulta aquí tus dudas tributarias con VASEbot.</p>
+            <p>Consulta aquí tus dudas tributarias.</p>
         </div>
     {% endif %}
 
     <form method="post" style="margin-top: 20px;">
         <label for="pregunta"><strong>Haz tu consulta:</strong></label><br><br>
         <input type="text" id="pregunta" name="pregunta" style="width: 400px; padding: 8px;" required>
-        <button type="submit" style="padding: 8px 16px; margin-left: 5px;">Preguntar</button>
+        <button type="submit" style="padding: 8px 16px; margin-left: 5px; background-color: #0A6A66; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Preguntar
+        </button>
     </form>
 
     {% if pregunta %}
@@ -52,7 +54,9 @@ HTML_TEMPLATE = """
     {% endif %}
 
     <br>
-    <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+    <a href="{{ url_for('logout') }}" style="display: inline-block; padding: 8px 16px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 4px;">
+        Cerrar sesión
+    </a>
 </body>
 </html>
 """
@@ -71,7 +75,9 @@ LOGIN_TEMPLATE = """
         <form method="post">
             <input type="text" name="usuario" placeholder="Usuario" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
             <input type="password" name="clave" placeholder="Clave" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
-            <button type="submit" style="padding: 8px 16px;">Ingresar</button>
+            <button type="submit" style="padding: 8px 16px; background-color: #0275d8; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Ingresar
+            </button>
         </form>
         {% if error %}
             <p style="color: red; margin-top: 10px;">{{ error }}</p>
