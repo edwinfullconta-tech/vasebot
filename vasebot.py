@@ -1,22 +1,63 @@
-from flask import Flask, request, render_template_string, redirect, url_for, session
+from flask import Flask, request, render_template_string, session, redirect, url_for
 import pandas as pd
 import os
 from difflib import get_close_matches
 
 # === Configuración de Flask ===
 app = Flask(__name__)
-app.secret_key = "clave_secreta_prueba"  # Necesario para manejar sesiones
-
-# === Usuario y clave de prueba ===
-USUARIO = "admin"
-CLAVE = "1234"
+app.secret_key = "clave_secreta_super_segura"  # Necesario para manejar sesiones
 
 # === Cargar Excel con ruta absoluta ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 EXCEL_FILE = os.path.join(BASE_DIR, "faq_tributarias.xlsx")
 df = pd.read_excel(EXCEL_FILE)
 
-# === Plantilla Login ===
+# === Usuario y clave de prueba ===
+USUARIO = "demo"
+CLAVE = "1234"
+
+# === Plantilla HTML ===
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>VASEbot – Asistente Tributario</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 40px; text-align: center;">
+    <h1>VASEbot 🤝</h1>
+    <p>Tu asistente tributario en línea</p>
+
+    {% if not pregunta %}
+        <div style="margin: 20px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; text-align: left;">
+            <h3>Bienvenido</h3>
+            <p>Consulta aquí tus dudas tributarias con VASEbot.</p>
+        </div>
+    {% endif %}
+
+    <form method="post" style="margin-top: 20px;">
+        <label for="pregunta"><strong>Haz tu consulta:</strong></label><br><br>
+        <input type="text" id="pregunta" name="pregunta" style="width: 400px; padding: 8px;" required>
+        <button type="submit" style="padding: 8px 16px; margin-left: 5px;">Preguntar</button>
+    </form>
+
+    {% if pregunta %}
+        <div style="margin: 30px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f1f1f1; text-align: left;">
+            <h3>Tu pregunta:</h3>
+            <p>{{ pregunta }}</p>
+            <h3>Respuesta:</h3>
+            <p>{{ respuesta|safe }}</p>
+            <p><em>{{ disclaimer }}</em></p>
+        </div>
+    {% endif %}
+
+    <br>
+    <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+</body>
+</html>
+"""
+
+# === Pantalla de Login ===
 LOGIN_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="es">
@@ -24,55 +65,16 @@ LOGIN_TEMPLATE = """
     <meta charset="UTF-8">
     <title>Login - VASEbot</title>
 </head>
-<body style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;">
-    <div style="text-align: center; border: 1px solid #ccc; padding: 30px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
+<body style="font-family: Arial, sans-serif; margin: 40px; text-align: center;">
+    <div style="margin: 50px auto; max-width: 400px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
         <h2>Acceso a VASEbot</h2>
         <form method="post">
-            <input type="text" name="usuario" placeholder="Usuario" required style="padding: 10px; margin: 10px; width: 80%;"><br>
-            <input type="password" name="clave" placeholder="Contraseña" required style="padding: 10px; margin: 10px; width: 80%;"><br>
-            <button type="submit" style="background-color: #0A6A66; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Ingresar</button>
+            <input type="text" name="usuario" placeholder="Usuario" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
+            <input type="password" name="clave" placeholder="Clave" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
+            <button type="submit" style="padding: 8px 16px;">Ingresar</button>
         </form>
         {% if error %}
-            <p style="color: red;">{{ error }}</p>
-        {% endif %}
-    </div>
-</body>
-</html>
-"""
-
-# === Plantilla Principal ===
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>VASEbot - Asistente Tributario</title>
-</head>
-<body style="font-family: Arial, sans-serif; margin: 40px; display: flex; justify-content: center;">
-    <div style="max-width: 600px; width: 100%;">
-        <h1 style="text-align: center;">VASEbot</h1>
-        <p style="text-align: center;">Asistente Tributario en línea</p>
-        <p style="text-align: center; font-style: italic; color: #555;">Bienvenido a VASEbot, tu espacio confiable para resolver dudas tributarias.</p>
-
-        <form method="post" style="text-align: center; margin-top: 20px;">
-            <input type="text" id="pregunta" name="pregunta" placeholder="Escribe tu consulta aquí..." 
-                   style="width: 80%; padding: 10px;" required>
-            <button type="submit" 
-                    style="background-color: #0A6A66; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
-                Enviar
-            </button>
-        </form>
-
-        {% if pregunta %}
-            <div style="margin-top: 30px; text-align: left;">
-                <h3>Tu pregunta:</h3>
-                <p>{{ pregunta }}</p>
-                <h3>Respuesta:</h3>
-                <p>{{ respuesta|safe }}</p>
-                {% if disclaimer %}
-                    <p><em>{{ disclaimer }}</em></p>
-                {% endif %}
-            </div>
+            <p style="color: red; margin-top: 10px;">{{ error }}</p>
         {% endif %}
     </div>
 </body>
@@ -92,7 +94,7 @@ def buscar_respuesta(pregunta):
 # === Ruta de Login ===
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    error = ""
+    error = None
     if request.method == "POST":
         usuario = request.form["usuario"]
         clave = request.form["clave"]
@@ -100,7 +102,7 @@ def login():
             session["usuario"] = usuario
             return redirect(url_for("home"))
         else:
-            error = "Usuario o contraseña incorrectos."
+            error = "Usuario o clave incorrectos"
     return render_template_string(LOGIN_TEMPLATE, error=error)
 
 # === Ruta principal ===
@@ -120,6 +122,12 @@ def home():
             respuesta += f"<br><br><strong>Fuente:</strong> {fuente}"
 
     return render_template_string(HTML_TEMPLATE, pregunta=pregunta, respuesta=respuesta, disclaimer=disclaimer)
+
+# === Cerrar sesión ===
+@app.route("/logout")
+def logout():
+    session.pop("usuario", None)
+    return redirect(url_for("login"))
 
 # === Ejecutar en Render ===
 if __name__ == "__main__":
