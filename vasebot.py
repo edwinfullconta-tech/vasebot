@@ -49,6 +49,17 @@ HTML_TEMPLATE = """
             <p>{{ pregunta }}</p>
             <h3>Respuesta:</h3>
             <p>{{ respuesta|safe }}</p>
+            {% if no_encontrada %}
+                <div style="margin-top:20px; padding:15px; border:1px dashed #ccc; border-radius:6px; background-color:#fff;">
+                    <p>Aún no tengo la respuesta a tu consulta. Te invito a plantearla en nuestro grupo de WhatsApp en el siguiente enlace:</p>
+                    <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb" target="_blank" 
+                       style="display:inline-flex; align-items:center; padding:10px 15px; background-color:#25D366; color:white; font-weight:bold; border-radius:6px; text-decoration:none;">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
+                             alt="WhatsApp" style="width:20px; height:20px; margin-right:8px;">
+                        Unirme al grupo
+                    </a>
+                </div>
+            {% endif %}
             <p><em>{{ disclaimer }}</em></p>
         </div>
     {% endif %}
@@ -93,9 +104,9 @@ def buscar_respuesta(pregunta):
     coincidencias = get_close_matches(pregunta, preguntas, n=1, cutoff=0.5)
     if coincidencias:
         fila = df[df["Pregunta"] == coincidencias[0]].iloc[0]
-        return fila["Respuesta"], fila.get("Fuente", ""), fila.get("Disclaimer", "")
+        return fila["Respuesta"], fila.get("Fuente", ""), fila.get("Disclaimer", ""), False
     else:
-        return "Lo siento, no encontré una coincidencia clara.", "", ""
+        return "Lo siento, no encontré una coincidencia clara.", "", "", True
 
 # === Ruta de Login ===
 @app.route("/login", methods=["GET", "POST"])
@@ -117,17 +128,17 @@ def home():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    respuesta, fuente, disclaimer = "", "", ""
+    respuesta, fuente, disclaimer, no_encontrada = "", "", "", False
     pregunta = ""
 
     if request.method == "POST":
         pregunta = request.form["pregunta"]
-        respuesta, fuente, disclaimer = buscar_respuesta(pregunta)
+        respuesta, fuente, disclaimer, no_encontrada = buscar_respuesta(pregunta)
 
         if fuente:
             respuesta += f"<br><br><strong>Fuente:</strong> {fuente}"
 
-    return render_template_string(HTML_TEMPLATE, pregunta=pregunta, respuesta=respuesta, disclaimer=disclaimer)
+    return render_template_string(HTML_TEMPLATE, pregunta=pregunta, respuesta=respuesta, disclaimer=disclaimer, no_encontrada=no_encontrada)
 
 # === Cerrar sesión ===
 @app.route("/logout")
