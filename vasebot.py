@@ -47,6 +47,12 @@ HTML_TEMPLATE = """
         <div style="margin: 30px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f1f1f1; text-align: left;">
             <h3>Tu pregunta:</h3>
             <p>{{ pregunta }}</p>
+            
+            {% if pregunta_excel %}
+                <h3>Pregunta encontrada en la base:</h3>
+                <p><em>{{ pregunta_excel }}</em></p>
+            {% endif %}
+            
             <h3>Respuesta:</h3>
             <p>{{ respuesta|safe }}</p>
             {% if no_encontrada %}
@@ -104,9 +110,9 @@ def buscar_respuesta(pregunta):
     coincidencias = get_close_matches(pregunta, preguntas, n=1, cutoff=0.5)
     if coincidencias:
         fila = df[df["Pregunta"] == coincidencias[0]].iloc[0]
-        return fila["Respuesta"], fila.get("Fuente", ""), fila.get("Disclaimer", ""), False
+        return fila["Pregunta"], fila["Respuesta"], fila.get("Fuente", ""), fila.get("Disclaimer", ""), False
     else:
-        return "Lo siento, no encontré una coincidencia clara.", "", "", True
+        return "", "Lo siento, no encontré una coincidencia clara.", "", "", True
 
 # === Ruta de Login ===
 @app.route("/login", methods=["GET", "POST"])
@@ -130,15 +136,21 @@ def home():
 
     respuesta, fuente, disclaimer, no_encontrada = "", "", "", False
     pregunta = ""
+    pregunta_excel = ""
 
     if request.method == "POST":
         pregunta = request.form["pregunta"]
-        respuesta, fuente, disclaimer, no_encontrada = buscar_respuesta(pregunta)
+        pregunta_excel, respuesta, fuente, disclaimer, no_encontrada = buscar_respuesta(pregunta)
 
         if fuente:
             respuesta += f"<br><br><strong>Fuente:</strong> {fuente}"
 
-    return render_template_string(HTML_TEMPLATE, pregunta=pregunta, respuesta=respuesta, disclaimer=disclaimer, no_encontrada=no_encontrada)
+    return render_template_string(HTML_TEMPLATE, 
+                                  pregunta=pregunta, 
+                                  pregunta_excel=pregunta_excel, 
+                                  respuesta=respuesta, 
+                                  disclaimer=disclaimer, 
+                                  no_encontrada=no_encontrada)
 
 # === Cerrar sesión ===
 @app.route("/logout")
