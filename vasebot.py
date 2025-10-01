@@ -22,6 +22,27 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <title>VASEbot – Asistente Tributario</title>
+    <style>
+        /* Estilos para el botón flotante de WhatsApp */
+        .whatsapp-float {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25D366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        .whatsapp-float img {
+            width: 35px;
+            height: 35px;
+        }
+    </style>
 </head>
 <body style="font-family: Arial, sans-serif; margin: 40px; text-align: center;">
     <h1>VASEbot 🤝</h1>
@@ -83,6 +104,11 @@ HTML_TEMPLATE = """
     <br>
     <a href="{{ url_for('logout') }}" style="display: inline-block; padding: 8px 16px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 4px;">
         Cerrar sesión
+    </a>
+
+    <!-- Botón flotante de WhatsApp -->
+    <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb?mode=ems_share_t" class="whatsapp-float" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
     </a>
 </body>
 </html>
