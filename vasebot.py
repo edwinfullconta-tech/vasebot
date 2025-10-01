@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template_string, session, redirect, url_for
 import pandas as pd
 import os
-from difflib import get_close_matches
 
 # === Configuración de Flask ===
 app = Flask(__name__)
@@ -16,7 +15,7 @@ df = pd.read_excel(EXCEL_FILE)
 USUARIO = "demo"
 CLAVE = "1234"
 
-# === Plantilla HTML ===
+# === Plantilla HTML principal ===
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="es">
@@ -28,44 +27,55 @@ HTML_TEMPLATE = """
     <h1>VASEbot 🤝</h1>
     <p>Tu asistente tributario en línea</p>
 
-    {% if not pregunta %}
+    {% if not tema and not pregunta %}
         <div style="margin: 20px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; text-align: left;">
             <h3>Bienvenido</h3>
-            <p>Consulta aquí tus dudas tributarias.</p>
+            <p>Consulta aquí tus dudas tributarias seleccionando un tema.</p>
         </div>
     {% endif %}
 
+    <!-- Selección de Tema -->
     <form method="post" style="margin-top: 20px;">
-        <label for="pregunta"><strong>Haz tu consulta:</strong></label><br><br>
-        <input type="text" id="pregunta" name="pregunta" style="width: 400px; padding: 8px;" required>
+        <label for="tema"><strong>Selecciona un tema:</strong></label><br><br>
+        <select id="tema" name="tema" style="width: 400px; padding: 8px;" required>
+            <option value="">-- Elige un tema --</option>
+            {% for t in temas %}
+                <option value="{{t}}" {% if tema == t %}selected{% endif %}>{{t}}</option>
+            {% endfor %}
+        </select>
         <button type="submit" style="padding: 8px 16px; margin-left: 5px; background-color: #0A6A66; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Preguntar
+            Ver preguntas
         </button>
     </form>
 
+    {% if tema and not pregunta %}
+        <div style="margin: 30px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f1f1f1; text-align: left;">
+            <h3>Preguntas sobre: {{ tema }}</h3>
+            <ul>
+                {% for p in preguntas_tema %}
+                    <li>
+                        <a href="{{ url_for('home') }}?tema={{ tema }}&pregunta={{ loop.index0 }}" 
+                           style="text-decoration: none; color: #0A6A66; font-weight: bold;">
+                            {{ p }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
     {% if pregunta %}
         <div style="margin: 30px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f1f1f1; text-align: left;">
-            <h3>Tu pregunta:</h3>
-            <p>{{ pregunta }}</p>
-            
-            {% if pregunta_excel %}
-                <h3>Pregunta encontrada en la base:</h3>
-                <p><em>{{ pregunta_excel }}</em></p>
-            {% endif %}
-            
+            <h3>Pregunta:</h3>
+            <p><em>{{ pregunta }}</em></p>
+
             <h3>Respuesta:</h3>
             <p>{{ respuesta|safe }}</p>
-            {% if no_encontrada %}
-                <div style="margin-top:20px; padding:15px; border:1px dashed #ccc; border-radius:6px; background-color:#fff;">
-                    <p>Aún no tengo la respuesta a tu consulta. Te invito a plantearla en nuestro grupo de WhatsApp en el siguiente enlace:</p>
-                    <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb" target="_blank" 
-                       style="display:inline-flex; align-items:center; padding:10px 15px; background-color:#25D366; color:white; font-weight:bold; border-radius:6px; text-decoration:none;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
-                             alt="WhatsApp" style="width:20px; height:20px; margin-right:8px;">
-                        Unirme al grupo
-                    </a>
-                </div>
+
+            {% if fuente %}
+                <p><strong>Fuente:</strong> {{ fuente }}</p>
             {% endif %}
+
             <p><em>{{ disclaimer }}</em></p>
         </div>
     {% endif %}
@@ -104,16 +114,6 @@ LOGIN_TEMPLATE = """
 </html>
 """
 
-# === Buscar mejor coincidencia ===
-def buscar_respuesta(pregunta):
-    preguntas = df["Pregunta"].tolist()
-    coincidencias = get_close_matches(pregunta, preguntas, n=1, cutoff=0.5)
-    if coincidencias:
-        fila = df[df["Pregunta"] == coincidencias[0]].iloc[0]
-        return fila["Pregunta"], fila["Respuesta"], fila.get("Fuente", ""), fila.get("Disclaimer", ""), False
-    else:
-        return "", "Lo siento, no encontré una coincidencia clara.", "", "", True
-
 # === Ruta de Login ===
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -134,23 +134,38 @@ def home():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    respuesta, fuente, disclaimer, no_encontrada = "", "", "", False
-    pregunta = ""
-    pregunta_excel = ""
+    tema = request.args.get("tema")
+    pregunta_idx = request.args.get("pregunta")
+    pregunta = respuesta = fuente = disclaimer = None
+    preguntas_tema = []
+
+    # Obtener lista única de temas
+    temas = sorted(df["Tema"].dropna().unique().tolist())
 
     if request.method == "POST":
-        pregunta = request.form["pregunta"]
-        pregunta_excel, respuesta, fuente, disclaimer, no_encontrada = buscar_respuesta(pregunta)
+        tema = request.form["tema"]
 
-        if fuente:
-            respuesta += f"<br><br><strong>Fuente:</strong> {fuente}"
+    if tema and not pregunta_idx:
+        preguntas_tema = df[df["Tema"] == tema]["Pregunta"].tolist()
 
-    return render_template_string(HTML_TEMPLATE, 
-                                  pregunta=pregunta, 
-                                  pregunta_excel=pregunta_excel, 
-                                  respuesta=respuesta, 
-                                  disclaimer=disclaimer, 
-                                  no_encontrada=no_encontrada)
+    if tema and pregunta_idx is not None:
+        preguntas_tema = df[df["Tema"] == tema].reset_index(drop=True)
+        fila = preguntas_tema.iloc[int(pregunta_idx)]
+        pregunta = fila["Pregunta"]
+        respuesta = fila["Respuesta"]
+        fuente = fila.get("Fuente", "")
+        disclaimer = fila.get("Disclaimer", "")
+
+    return render_template_string(
+        HTML_TEMPLATE,
+        temas=temas,
+        tema=tema,
+        preguntas_tema=preguntas_tema,
+        pregunta=pregunta,
+        respuesta=respuesta,
+        fuente=fuente,
+        disclaimer=disclaimer,
+    )
 
 # === Cerrar sesión ===
 @app.route("/logout")
