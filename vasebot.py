@@ -54,7 +54,7 @@ HTML_TEMPLATE = """
             <ul>
                 {% for p in preguntas_tema %}
                     <li>
-                        <a href="{{ url_for('home') }}?tema={{ tema }}&pregunta={{ loop.index0 }}" 
+                        <a href="{{ url_for('home', tema=tema, pregunta=loop.index0) }}" 
                            style="text-decoration: none; color: #0A6A66; font-weight: bold;">
                             {{ p }}
                         </a>
@@ -134,7 +134,7 @@ def home():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    tema = request.args.get("tema")
+    tema = None
     pregunta_idx = request.args.get("pregunta")
     pregunta = respuesta = fuente = disclaimer = None
     preguntas_tema = []
@@ -142,10 +142,15 @@ def home():
     # Obtener lista única de temas
     temas = sorted(df["Tema"].dropna().unique().tolist())
 
+    # Si se selecciona tema desde el formulario, reiniciamos pregunta
     if request.method == "POST":
         tema = request.form["tema"]
+        return redirect(url_for("home", tema=tema))
 
-    if tema and not pregunta_idx:
+    # Si se navega con GET
+    tema = request.args.get("tema")
+
+    if tema and pregunta_idx is None:
         preguntas_tema = df[df["Tema"] == tema]["Pregunta"].tolist()
 
     if tema and pregunta_idx is not None:
