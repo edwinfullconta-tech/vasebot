@@ -12,8 +12,8 @@ EXCEL_FILE = os.path.join(BASE_DIR, "faq_tributarias.xlsx")
 df = pd.read_excel(EXCEL_FILE)
 
 # === Usuario y clave de prueba ===
-USUARIO = "demo"
-CLAVE = "1234"
+USUARIO = "vasebot"
+CLAVE = "vaseE@"
 
 # === Plantilla HTML principal ===
 HTML_TEMPLATE = """
