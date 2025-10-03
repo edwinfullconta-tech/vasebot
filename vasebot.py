@@ -66,6 +66,7 @@ HTML_TEMPLATE = """
             margin-top: 8px;
             border-radius: 5px;
             border: 1px solid #ccc;
+            box-sizing: border-box; /* 👈 Corregido para alinear bien */
         }
         button { background-color: #0A6A66; color: white; border: none; cursor: pointer; }
         button:hover { background-color: #09524f; }
