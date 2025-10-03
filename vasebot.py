@@ -203,7 +203,7 @@ HTML_TEMPLATE = """
         <div class="card card-respuesta">
             <h3>Respuesta</h3>
             <p>{{ respuesta|safe }}</p>
-            {% if fuente %}<p><strong>Fuente:</strong> {{ fuente }}</p>{% endif %}
+            {% if base_legal %}<p><strong>Base legal:</strong> {{ base_legal }}</p>{% endif %}
             <p><em>{{ disclaimer }}</em></p>
         </div>
     {% endif %}
@@ -279,7 +279,7 @@ def home():
 
     tema = request.args.get("tema")
     pregunta_idx = request.args.get("pregunta")
-    pregunta = respuesta = fuente = disclaimer = None
+    pregunta = respuesta = base_legal = disclaimer = None
     preguntas_tema = []
     resultados = []
     keyword = request.form.get("keyword", "") if request.method == "POST" else None
@@ -313,7 +313,7 @@ def home():
         fila = preguntas_tema.iloc[int(pregunta_idx)]
         pregunta = fila["Pregunta"]
         respuesta = fila["Respuesta"]
-        fuente = fila.get("Fuente", "")
+        base_legal = fila.get("Base legal", "")
         disclaimer = fila.get("Disclaimer", "")
 
     return render_template_string(
@@ -323,7 +323,7 @@ def home():
         preguntas_tema=preguntas_tema,
         pregunta=pregunta,
         respuesta=respuesta,
-        fuente=fuente,
+        base_legal=base_legal,
         disclaimer=disclaimer,
         resultados=resultados,
         keyword=keyword,
