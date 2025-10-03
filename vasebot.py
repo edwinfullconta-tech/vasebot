@@ -21,13 +21,69 @@ HTML_TEMPLATE = """
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VASEbot – Asistente Tributario</title>
     <style>
-        /* Estilos para el botón flotante de WhatsApp */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+            background-color: #f7f7f7;
+        }
+        h1 {
+            color: #0A6A66;
+        }
+        form, .card {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            text-align: left;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+        }
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #0A6A66;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #09524f;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        a.link-pregunta {
+            text-decoration: none;
+            color: #0A6A66;
+            font-weight: bold;
+        }
+        a.logout {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #d9534f;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        /* Botón flotante de WhatsApp */
         .whatsapp-float {
             position: fixed;
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             bottom: 20px;
             right: 20px;
             background-color: #25D366;
@@ -37,46 +93,72 @@ HTML_TEMPLATE = """
             justify-content: center;
             box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
             z-index: 1000;
+            transition: transform 0.2s;
+        }
+        .whatsapp-float:hover {
+            transform: scale(1.1);
         }
         .whatsapp-float img {
-            width: 35px;
-            height: 35px;
+            width: 32px;
+            height: 32px;
+        }
+        /* Adaptación a móviles */
+        @media (max-width: 600px) {
+            body {
+                margin: 10px;
+            }
+            form, .card {
+                padding: 12px;
+            }
+            select, input, button {
+                font-size: 16px;
+            }
+            h1 {
+                font-size: 22px;
+            }
+            .whatsapp-float {
+                width: 50px;
+                height: 50px;
+                bottom: 15px;
+                right: 15px;
+            }
+            .whatsapp-float img {
+                width: 28px;
+                height: 28px;
+            }
         }
     </style>
 </head>
-<body style="font-family: Arial, sans-serif; margin: 40px; text-align: center;">
+<body>
     <h1>VASEbot 🤝</h1>
     <p>Tu asistente tributario en línea</p>
 
     {% if not tema and not pregunta %}
-        <div style="margin: 20px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; text-align: left;">
+        <div class="card">
             <h3>Bienvenido</h3>
             <p>Consulta aquí tus dudas tributarias seleccionando un tema.</p>
         </div>
     {% endif %}
 
     <!-- Selección de Tema -->
-    <form method="post" style="margin-top: 20px;">
-        <label for="tema"><strong>Selecciona un tema:</strong></label><br><br>
-        <select id="tema" name="tema" style="width: 400px; padding: 8px;" required>
+    <form method="post">
+        <label for="tema"><strong>Selecciona un tema:</strong></label>
+        <select id="tema" name="tema" required>
             <option value="">-- Elige un tema --</option>
             {% for t in temas %}
                 <option value="{{t}}" {% if tema == t %}selected{% endif %}>{{t}}</option>
             {% endfor %}
         </select>
-        <button type="submit" style="padding: 8px 16px; margin-left: 5px; background-color: #0A6A66; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Ver preguntas
-        </button>
+        <button type="submit">Ver preguntas</button>
     </form>
 
     {% if tema and not pregunta %}
-        <div style="margin: 30px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f1f1f1; text-align: left;">
+        <div class="card">
             <h3>Preguntas sobre: {{ tema }}</h3>
             <ul>
                 {% for p in preguntas_tema %}
                     <li>
-                        <a href="{{ url_for('home', tema=tema, pregunta=loop.index0) }}" 
-                           style="text-decoration: none; color: #0A6A66; font-weight: bold;">
+                        <a class="link-pregunta" href="{{ url_for('home', tema=tema, pregunta=loop.index0) }}">
                             {{ p }}
                         </a>
                     </li>
@@ -86,7 +168,7 @@ HTML_TEMPLATE = """
     {% endif %}
 
     {% if pregunta %}
-        <div style="margin: 30px auto; max-width: 600px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f1f1f1; text-align: left;">
+        <div class="card">
             <h3>Pregunta:</h3>
             <p><em>{{ pregunta }}</em></p>
 
@@ -101,13 +183,11 @@ HTML_TEMPLATE = """
         </div>
     {% endif %}
 
-    <br>
-    <a href="{{ url_for('logout') }}" style="display: inline-block; padding: 8px 16px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 4px;">
-        Cerrar sesión
-    </a>
+    <a href="{{ url_for('logout') }}" class="logout">Cerrar sesión</a>
 
     <!-- Botón flotante de WhatsApp -->
-    <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb?mode=ems_share_t" class="whatsapp-float" target="_blank">
+    <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb?mode=ems_share_t" 
+       class="whatsapp-float" target="_blank">
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
     </a>
 </body>
@@ -120,17 +200,57 @@ LOGIN_TEMPLATE = """
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - VASEbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            text-align: center;
+            background-color: #f7f7f7;
+        }
+        .login-box {
+            margin: 50px auto;
+            max-width: 400px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+        }
+        input, button {
+            width: 90%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #0275d8;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #025aa5;
+        }
+        @media (max-width: 600px) {
+            body {
+                margin: 20px;
+            }
+            .login-box {
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; margin: 40px; text-align: center;">
-    <div style="margin: 50px auto; max-width: 400px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+<body>
+    <div class="login-box">
         <h2>Acceso a VASEbot</h2>
         <form method="post">
-            <input type="text" name="usuario" placeholder="Usuario" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
-            <input type="password" name="clave" placeholder="Clave" required style="width: 90%; padding: 8px; margin-bottom: 10px;"><br>
-            <button type="submit" style="padding: 8px 16px; background-color: #0275d8; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Ingresar
-            </button>
+            <input type="text" name="usuario" placeholder="Usuario" required><br>
+            <input type="password" name="clave" placeholder="Clave" required><br>
+            <button type="submit">Ingresar</button>
         </form>
         {% if error %}
             <p style="color: red; margin-top: 10px;">{{ error }}</p>
