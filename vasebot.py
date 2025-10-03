@@ -30,12 +30,10 @@ HTML_TEMPLATE = """
             text-align: center;
             background-color: #f7f7f7;
         }
-        h1 {
-            color: #0A6A66;
-        }
+        h1 { color: #0A6A66; }
         form, .card {
             margin: 20px auto;
-            max-width: 600px;
+            max-width: 700px;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -43,14 +41,29 @@ HTML_TEMPLATE = """
             text-align: left;
             box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
         }
-        .card-pregunta {
-            background-color: #e9f7ef;
-            border-left: 5px solid #28a745;
-        }
-        .card-respuesta {
-            background-color: #fff3cd;
-            border-left: 5px solid #ffc107;
+        .card-pregunta, .card-respuesta {
+            border: 1px solid #ccc;
+            border-radius: 6px;
             margin-top: 15px;
+            padding: 0;
+        }
+        .card-pregunta h3 {
+            background-color: #eafaf1;
+            border-bottom: 1px solid #ccc;
+            padding: 10px;
+            margin: 0;
+            color: #28a745;
+        }
+        .card-respuesta h3 {
+            background-color: #fdf6e3;
+            border-bottom: 1px solid #ccc;
+            padding: 10px;
+            margin: 0;
+            color: #d97706;
+        }
+        .card-pregunta p, .card-respuesta p {
+            padding: 10px;
+            margin: 0;
         }
         select, input, button {
             width: 100%;
@@ -65,21 +78,15 @@ HTML_TEMPLATE = """
             border: none;
             cursor: pointer;
         }
-        button:hover {
-            background-color: #09524f;
-        }
-        ul {
-            padding-left: 20px;
-        }
-        li {
-            margin: 8px 0;
-        }
+        button:hover { background-color: #09524f; }
+        ul { padding-left: 20px; }
+        li { margin: 8px 0; }
         a.link-pregunta {
             text-decoration: none;
             color: #0A6A66;
             font-weight: bold;
         }
-        a.logout {
+        .logout {
             display: inline-block;
             padding: 8px 16px;
             background-color: #d9534f;
@@ -88,7 +95,8 @@ HTML_TEMPLATE = """
             border-radius: 4px;
             margin-top: 20px;
         }
-        /* Botón flotante de WhatsApp */
+        .highlight { background-color: yellow; font-weight: bold; }
+        /* Botón flotante WhatsApp */
         .whatsapp-float {
             position: fixed;
             width: 55px;
@@ -104,37 +112,16 @@ HTML_TEMPLATE = """
             z-index: 1000;
             transition: transform 0.2s;
         }
-        .whatsapp-float:hover {
-            transform: scale(1.1);
-        }
-        .whatsapp-float img {
-            width: 32px;
-            height: 32px;
-        }
-        /* Adaptación a móviles */
+        .whatsapp-float:hover { transform: scale(1.1); }
+        .whatsapp-float img { width: 32px; height: 32px; }
+        /* Adaptación móviles */
         @media (max-width: 600px) {
-            body {
-                margin: 10px;
-            }
-            form, .card {
-                padding: 12px;
-            }
-            select, input, button {
-                font-size: 16px;
-            }
-            h1 {
-                font-size: 22px;
-            }
-            .whatsapp-float {
-                width: 50px;
-                height: 50px;
-                bottom: 15px;
-                right: 15px;
-            }
-            .whatsapp-float img {
-                width: 28px;
-                height: 28px;
-            }
+            body { margin: 10px; }
+            form, .card { padding: 12px; }
+            select, input, button { font-size: 16px; }
+            h1 { font-size: 22px; }
+            .whatsapp-float { width: 50px; height: 50px; bottom: 15px; right: 15px; }
+            .whatsapp-float img { width: 28px; height: 28px; }
         }
     </style>
 </head>
@@ -142,24 +129,58 @@ HTML_TEMPLATE = """
     <h1>VASEbot 🤝</h1>
     <p>Tu asistente tributario en línea</p>
 
-    {% if not tema and not pregunta %}
+    {% if not tema and not pregunta and not resultados %}
         <div class="card">
             <h3>Bienvenido</h3>
-            <p>Consulta aquí tus dudas tributarias seleccionando un tema.</p>
+            <p>Consulta aquí tus dudas tributarias seleccionando un tema o buscando por palabra clave.</p>
         </div>
     {% endif %}
 
-    <!-- Selección de Tema -->
+    <!-- Formulario búsqueda -->
     <form method="post">
-        <label for="tema"><strong>Selecciona un tema:</strong></label>
-        <select id="tema" name="tema" required>
+        <label><strong>Selecciona un tema:</strong></label>
+        <select name="tema">
             <option value="">-- Elige un tema --</option>
             {% for t in temas %}
                 <option value="{{t}}" {% if tema == t %}selected{% endif %}>{{t}}</option>
             {% endfor %}
         </select>
-        <button type="submit">Ver preguntas</button>
+        <br><br>
+        <label><strong>O busca por palabra clave:</strong></label>
+        <input type="text" name="keyword" placeholder="Escribe palabra clave o frase...">
+        <button type="submit">Buscar</button>
     </form>
+
+    {% if resultados %}
+        <div class="card">
+            <h3>Resultados de búsqueda</h3>
+            <ul>
+                {% for r in resultados[:5] %}
+                    <li>
+                        <a class="link-pregunta" href="{{ url_for('home', tema=r['Tema'], pregunta=r['Index']) }}">
+                            {{ r['Pregunta']|safe }}
+                        </a>
+                        <p><em>{{ r['Preview']|safe }}</em></p>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if resultados|length > 5 %}
+                <form method="post">
+                    <input type="hidden" name="keyword" value="{{ keyword }}">
+                    <button type="submit">Ver más resultados</button>
+                </form>
+            {% endif %}
+        </div>
+    {% elif keyword %}
+        <div class="card">
+            <h3>Sin resultados</h3>
+            <p>No encontramos coincidencias para "<strong>{{ keyword }}</strong>".</p>
+            <p>Puedes escribirnos directamente en nuestro WhatsApp:</p>
+            <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb?mode=ems_share_t" target="_blank">
+                📲 Consultar por WhatsApp
+            </a>
+        </div>
+    {% endif %}
 
     {% if tema and not pregunta %}
         <div class="card">
@@ -178,18 +199,13 @@ HTML_TEMPLATE = """
 
     {% if pregunta %}
         <div class="card card-pregunta">
-            <h3>Pregunta:</h3>
+            <h3>Pregunta</h3>
             <p><em>{{ pregunta }}</em></p>
         </div>
-
         <div class="card card-respuesta">
-            <h3>Respuesta:</h3>
+            <h3>Respuesta</h3>
             <p>{{ respuesta|safe }}</p>
-
-            {% if fuente %}
-                <p><strong>Fuente:</strong> {{ fuente }}</p>
-            {% endif %}
-
+            {% if fuente %}<p><strong>Fuente:</strong> {{ fuente }}</p>{% endif %}
             <p><em>{{ disclaimer }}</em></p>
         </div>
     {% endif %}
@@ -214,12 +230,7 @@ LOGIN_TEMPLATE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - VASEbot</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            text-align: center;
-            background-color: #f7f7f7;
-        }
+        body { font-family: Arial, sans-serif; margin: 40px; text-align: center; background-color: #f7f7f7; }
         .login-box {
             margin: 50px auto;
             max-width: 400px;
@@ -229,30 +240,9 @@ LOGIN_TEMPLATE = """
             background-color: white;
             box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
         }
-        input, button {
-            width: 90%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #0275d8;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #025aa5;
-        }
-        @media (max-width: 600px) {
-            body {
-                margin: 20px;
-            }
-            .login-box {
-                padding: 15px;
-            }
-        }
+        input, button { width: 90%; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        button { background-color: #0275d8; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #025aa5; }
     </style>
 </head>
 <body>
@@ -263,15 +253,13 @@ LOGIN_TEMPLATE = """
             <input type="password" name="clave" placeholder="Clave" required><br>
             <button type="submit">Ingresar</button>
         </form>
-        {% if error %}
-            <p style="color: red; margin-top: 10px;">{{ error }}</p>
-        {% endif %}
+        {% if error %}<p style="color: red; margin-top: 10px;">{{ error }}</p>{% endif %}
     </div>
 </body>
 </html>
 """
 
-# === Ruta de Login ===
+# === Rutas ===
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -285,27 +273,39 @@ def login():
             error = "Usuario o clave incorrectos"
     return render_template_string(LOGIN_TEMPLATE, error=error)
 
-# === Ruta principal ===
+
 @app.route("/", methods=["GET", "POST"])
 def home():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    tema = None
+    tema = request.args.get("tema")
     pregunta_idx = request.args.get("pregunta")
     pregunta = respuesta = fuente = disclaimer = None
     preguntas_tema = []
+    resultados = []
+    keyword = request.form.get("keyword", "") if request.method == "POST" else None
 
-    # Obtener lista única de temas
     temas = sorted(df["Tema"].dropna().unique().tolist())
 
-    # Si se selecciona tema desde el formulario, reiniciamos pregunta
-    if request.method == "POST":
+    # === Buscar por palabra clave ===
+    if keyword:
+        kw = keyword.lower()
+        for idx, row in df.iterrows():
+            if kw in str(row["Pregunta"]).lower() or kw in str(row["Respuesta"]).lower():
+                resultados.append({
+                    "Tema": row["Tema"],
+                    "Index": df[df["Tema"] == row["Tema"]].reset_index().index[
+                        df[df["Tema"] == row["Tema"]]["Pregunta"] == row["Pregunta"]
+                    ][0],
+                    "Pregunta": row["Pregunta"].replace(keyword, f"<span class='highlight'>{keyword}</span>"),
+                    "Preview": (row["Respuesta"][:120] + "...").replace(keyword, f"<span class='highlight'>{keyword}</span>")
+                })
+
+    # === Filtrar por tema ===
+    if request.method == "POST" and not keyword:
         tema = request.form["tema"]
         return redirect(url_for("home", tema=tema))
-
-    # Si se navega con GET
-    tema = request.args.get("tema")
 
     if tema and pregunta_idx is None:
         preguntas_tema = df[df["Tema"] == tema]["Pregunta"].tolist()
@@ -327,14 +327,16 @@ def home():
         respuesta=respuesta,
         fuente=fuente,
         disclaimer=disclaimer,
+        resultados=resultados,
+        keyword=keyword,
     )
 
-# === Cerrar sesión ===
+
 @app.route("/logout")
 def logout():
     session.pop("usuario", None)
     return redirect(url_for("login"))
 
-# === Ejecutar en Render ===
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
