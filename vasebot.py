@@ -43,6 +43,15 @@ HTML_TEMPLATE = """
             text-align: left;
             box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
         }
+        .card-pregunta {
+            background-color: #e9f7ef;
+            border-left: 5px solid #28a745;
+        }
+        .card-respuesta {
+            background-color: #fff3cd;
+            border-left: 5px solid #ffc107;
+            margin-top: 15px;
+        }
         select, input, button {
             width: 100%;
             padding: 10px;
@@ -168,10 +177,12 @@ HTML_TEMPLATE = """
     {% endif %}
 
     {% if pregunta %}
-        <div class="card">
+        <div class="card card-pregunta">
             <h3>Pregunta:</h3>
             <p><em>{{ pregunta }}</em></p>
+        </div>
 
+        <div class="card card-respuesta">
             <h3>Respuesta:</h3>
             <p>{{ respuesta|safe }}</p>
 
@@ -187,7 +198,7 @@ HTML_TEMPLATE = """
 
     <!-- Botón flotante de WhatsApp -->
     <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb?mode=ems_share_t" 
-       class="whatsapp-float" target="_blank">
+       class="whatsapp-float" target="_blank" title="Escríbenos en WhatsApp">
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
     </a>
 </body>
