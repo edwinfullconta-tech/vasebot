@@ -48,22 +48,23 @@ HTML_TEMPLATE = """
             padding: 0;
         }
         .card-pregunta h3 {
-            background-color: #eafaf1;
+            background-color: #004085;
             border-bottom: 1px solid #ccc;
             padding: 10px;
             margin: 0;
-            color: #28a745;
+            color: #ffffff;
         }
         .card-respuesta h3 {
-            background-color: #fdf6e3;
+            background-color: #6c757d;
             border-bottom: 1px solid #ccc;
             padding: 10px;
             margin: 0;
-            color: #d97706;
+            color: #ffffff;
         }
         .card-pregunta p, .card-respuesta p {
             padding: 10px;
             margin: 0;
+            font-style: normal;
         }
         select, input, button {
             width: 100%;
@@ -160,7 +161,7 @@ HTML_TEMPLATE = """
                         <a class="link-pregunta" href="{{ url_for('home', tema=r['Tema'], pregunta=r['Index']) }}">
                             {{ r['Pregunta']|safe }}
                         </a>
-                        <p><em>{{ r['Preview']|safe }}</em></p>
+                        <p>{{ r['Preview']|safe }}</p>
                     </li>
                 {% endfor %}
             </ul>
@@ -175,10 +176,7 @@ HTML_TEMPLATE = """
         <div class="card">
             <h3>Sin resultados</h3>
             <p>No encontramos coincidencias para "<strong>{{ keyword }}</strong>".</p>
-            <p>Puedes escribirnos directamente en nuestro WhatsApp:</p>
-            <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb?mode=ems_share_t" target="_blank">
-                📲 Consultar por WhatsApp
-            </a>
+            <p>Puedes escribirnos directamente al WhatsApp</p>
         </div>
     {% endif %}
 
@@ -200,7 +198,7 @@ HTML_TEMPLATE = """
     {% if pregunta %}
         <div class="card card-pregunta">
             <h3>Pregunta</h3>
-            <p><em>{{ pregunta }}</em></p>
+            <p>{{ pregunta }}</p>
         </div>
         <div class="card card-respuesta">
             <h3>Respuesta</h3>
@@ -214,7 +212,7 @@ HTML_TEMPLATE = """
 
     <!-- Botón flotante de WhatsApp -->
     <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb?mode=ems_share_t" 
-       class="whatsapp-float" target="_blank" title="Escríbenos en WhatsApp">
+       class="whatsapp-float" target="_blank" title="Escríbenos al WhatsApp">
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
     </a>
 </body>
