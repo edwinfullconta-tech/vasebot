@@ -24,12 +24,7 @@ HTML_TEMPLATE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VASEbot – Asistente Tributario</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            text-align: center;
-            background-color: #f7f7f7;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; background-color: #f7f7f7; }
         h1 { color: #0A6A66; }
         form, .card {
             margin: 20px auto;
@@ -64,7 +59,6 @@ HTML_TEMPLATE = """
         .card-pregunta p, .card-respuesta p {
             padding: 10px;
             margin: 0;
-            font-style: normal;
         }
         select, input, button {
             width: 100%;
@@ -73,20 +67,11 @@ HTML_TEMPLATE = """
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-        button {
-            background-color: #0A6A66;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
+        button { background-color: #0A6A66; color: white; border: none; cursor: pointer; }
         button:hover { background-color: #09524f; }
         ul { padding-left: 20px; }
         li { margin: 8px 0; }
-        a.link-pregunta {
-            text-decoration: none;
-            color: #0A6A66;
-            font-weight: bold;
-        }
+        a.link-pregunta { text-decoration: none; color: #0A6A66; font-weight: bold; }
         .logout {
             display: inline-block;
             padding: 8px 16px;
@@ -115,7 +100,6 @@ HTML_TEMPLATE = """
         }
         .whatsapp-float:hover { transform: scale(1.1); }
         .whatsapp-float img { width: 32px; height: 32px; }
-        /* Adaptación móviles */
         @media (max-width: 600px) {
             body { margin: 10px; }
             form, .card { padding: 12px; }
@@ -148,7 +132,8 @@ HTML_TEMPLATE = """
         </select>
         <br><br>
         <label><strong>O busca por palabra clave:</strong></label>
-        <input type="text" name="keyword" placeholder="Escribe palabra clave o frase...">
+        <input type="text" name="keyword" placeholder="Escribe palabra clave o frase..." value="{{ keyword or '' }}">
+        <input type="hidden" name="offset" value="0">
         <button type="submit">Buscar</button>
     </form>
 
@@ -156,7 +141,7 @@ HTML_TEMPLATE = """
         <div class="card">
             <h3>Resultados de búsqueda</h3>
             <ul>
-                {% for r in resultados[:5] %}
+                {% for r in resultados %}
                     <li>
                         <a class="link-pregunta" href="{{ url_for('home', tema=r['Tema'], pregunta=r['Index']) }}">
                             {{ r['Pregunta']|safe }}
@@ -165,9 +150,10 @@ HTML_TEMPLATE = """
                     </li>
                 {% endfor %}
             </ul>
-            {% if resultados|length > 5 %}
+            {% if mostrar_mas %}
                 <form method="post">
                     <input type="hidden" name="keyword" value="{{ keyword }}">
+                    <input type="hidden" name="offset" value="{{ offset + limite }}">
                     <button type="submit">Ver más resultados</button>
                 </form>
             {% endif %}
@@ -210,7 +196,7 @@ HTML_TEMPLATE = """
 
     <a href="{{ url_for('logout') }}" class="logout">Cerrar sesión</a>
 
-    <!-- Botón flotante de WhatsApp -->
+    <!-- Botón flotante WhatsApp -->
     <a href="https://chat.whatsapp.com/BRoZPkxHmsGG9JrZSF9tNb?mode=ems_share_t" 
        class="whatsapp-float" target="_blank" title="Escríbenos al WhatsApp">
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
@@ -283,22 +269,26 @@ def home():
     preguntas_tema = []
     resultados = []
     keyword = request.form.get("keyword", "") if request.method == "POST" else None
+    offset = int(request.form.get("offset", 0)) if request.method == "POST" else 0
+    limite = 5
 
     temas = sorted(df["Tema"].dropna().unique().tolist())
 
     # === Buscar por palabra clave ===
     if keyword:
         kw = keyword.lower()
-        for idx, row in df.iterrows():
-            if kw in str(row["Pregunta"]).lower() or kw in str(row["Respuesta"]).lower():
-                resultados.append({
-                    "Tema": row["Tema"],
-                    "Index": df[df["Tema"] == row["Tema"]].reset_index().index[
-                        df[df["Tema"] == row["Tema"]]["Pregunta"] == row["Pregunta"]
-                    ][0],
-                    "Pregunta": row["Pregunta"].replace(keyword, f"<span class='highlight'>{keyword}</span>"),
-                    "Preview": (row["Respuesta"][:120] + "...").replace(keyword, f"<span class='highlight'>{keyword}</span>")
-                })
+        coincidencias = df[df["Pregunta"].str.lower().str.contains(kw) | df["Respuesta"].str.lower().str.contains(kw)]
+        for idx, row in coincidencias.iterrows():
+            resultados.append({
+                "Tema": row["Tema"],
+                "Index": coincidencias.reset_index().index[coincidencias.reset_index()["Pregunta"] == row["Pregunta"]][0],
+                "Pregunta": row["Pregunta"].replace(keyword, f"<span class='highlight'>{keyword}</span>"),
+                "Preview": (row["Respuesta"][:120] + "...").replace(keyword, f"<span class='highlight'>{keyword}</span>")
+            })
+        mostrar_mas = len(coincidencias) > offset + limite
+        resultados = resultados[offset:offset+limite]
+    else:
+        mostrar_mas = False
 
     # === Filtrar por tema ===
     if request.method == "POST" and not keyword:
@@ -327,6 +317,9 @@ def home():
         disclaimer=disclaimer,
         resultados=resultados,
         keyword=keyword,
+        offset=offset,
+        limite=limite,
+        mostrar_mas=mostrar_mas
     )
 
 
